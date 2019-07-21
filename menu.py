@@ -102,93 +102,9 @@ def remover():
         print("Opcao Invalida!!!")
         op = raw_input("Numero(1/2/3): ")
     if op == "1":
-        print "Pessoas a serem DELETADAS"
-        print "ID --- Nome Completo --- D.Nascimento --- CPF"
-        banco.command.execute("select * from pessoa;")
-        dados = banco.command.fetchone()
-        while dados is not None:
-            print str(dados[0])+"      "+dados[1]+" "+dados[2]+"    "+dados[3]+"    "+dados[4]
-            dados = banco.command.fetchone()
-        op = raw_input("Insira o ID da pessoa que deseja deletar: ")
-        banco.command.execute("select id_titular, nome, cpf from Pessoa where id_titular=%s;" % (int(op)))
-        dados = banco.command.fetchone()
-        clear()
-        print "ID: "+str(dados[0])
-        print "Nome: "+dados[1]
-        print "CPF: "+dados[2]
-        op = raw_input("Deseja DELETAR a seguinte pessoa(S/N): ")
-        while (op != "S") and (op != "s") and (op != "N") and (op != "n"):
-            print "Opcao Invalida!!!"
-            op = raw_input("Somente 'S' ou 'N': ")
-        if op == "S" or op == "s":
-            print "Apos executado sera impossivel restaurar os dados dessa pessoa"
-            op = raw_input("Deseja realmente prosseguir?(SIM/NAO): ")
-            while (op != "SIM") and (op != "NAO"):
-                print "Opcao Invalida!!!"
-                op = raw_input("Somente 'SIM' ou 'NAO': ")
-            if op == "SIM":
-                try:
-                    banco.command.execute("delete from Pessoa where id_titular=%s;" % (dados[0]))
-                    banco.bancoconect.commit()
-                    print "Dados deletados com sucesso!"
-                    time.sleep(2)
-                    m_principal()
-                except:
-                    print "Ocorreu um erro"
-            else:
-                print "Retornando ao Menu Principal..."
-                time.sleep(3)
-                m_principal()
-        else:
-            print "Retornando ao Menu Principal..."
-            time.sleep(3)
-            m_principal()
+        remove_pessoa()
     elif op == "2":
-        print "Cartoes a serem DELETADOS"
-        print "ID --- Titular --- Cartao --- Vencimento"
-        banco.command.execute("select Cartao.id_cartao, Pessoa.nome, Pessoa.cpf, Cartao.numero, Cartao.d_vencimento from Cartao inner join Pessoa on i_titular = id_titular;")
-        dados = banco.command.fetchone()
-        while dados is not None:
-            print str(dados[0])+"    "+dados[1]+"   "+dados[2]+"   "+str(dados[3])+"   "+dados[4]
-            dados = banco.command.fetchone()
-        op = raw_input("Insira o ID do cartao que deseja deletar: ")
-        banco.command.execute("select id_cartao, nome_cartao, numero from Cartao where id_cartao=%s;" % (str(op)))
-        dados = banco.command.fetchone()
-        clear()
-        print "ID: "+str(dados[0])
-        print "Nome: "+dados[1]
-        print "Numero: "+str(dados[2])
-        op = raw_input("Deseja DELETAR o seguinte cartao(S/N): ")
-
-        while (op != "S") and (op != "s") and (op != "N") and (op != "n"):
-            print "Opcao Invalida!!!"
-            op = raw_input("Somente 'S' ou 'N': ")
-
-        if op == "S" or op == "s": #menu-remover-cartao-firstconfirmation
-            print "Apos executado sera impossivel restaurar os dados do cartao"
-            op = raw_input("Deseja realmente prosseguir?(SIM/NAO): ")
-
-            while (op != "SIM") and (op != "NAO"):
-                print "Opcao Invalida!!!"
-                op = raw_input("Somente 'SIM' ou 'NAO': ")
-
-            if op == "SIM":
-                try:
-                    banco.command.execute("delete from Cartao where id_cartao=%s;" % (dados[0]))
-                    banco.bancoconect.commit()
-                    print "Cartao deletado com sucesso!"
-                    time.sleep(2)
-                    m_principal()
-                except NameError:
-                    print "Ocorreu um Erro"
-            else:
-                print "Retornando ao inicio..."
-                time.sleep(2)
-                m_principal()
-        else:
-            print "Retornando ao inicio..."
-            time.sleep(2)
-            m_principal()
+        remove_cartao()
     else:
         m_principal()
 
@@ -230,8 +146,7 @@ def cad_pessoa():
         if (op == "S") or (op == "s"):
             pessoa = Pessoa(nome, sobrenome, d_nasc, cpf)
             try:
-                banco.command.execute("Insert into Pessoa values(null, '%s', '%s', '%s', '%s');" % (pessoa.nome, pessoa.sobrenome, pessoa.d_nasc, pessoa.cpf))
-                banco.bancoconect.commit()
+                banco.cadPessoa(pessoa.nome, pessoa.sobrenome, pessoa.d_nasc, pessoa.cpf)
             except NameError:
                 print "erro " + NameError
             print "---Cadastro efetuado com sucesso---"
@@ -280,21 +195,99 @@ def cad_cartao():
         if (op == "S") or (op == "s"):
             #exibindo dados para linkar com a pessoa
             print "Selecione uma pessoa para atribuir o cartao"
-            banco.command.execute("Select * from Pessoa;")
-            dados = banco.command.fetchone()
+            dados = banco.listarPessoa() #Select em 'Pessoa'
             print "ID ---- Nome ---- CPF"
             while dados is not None:
                 print str(dados[0])+"       "+dados[1]+"     "+dados[4]
                 dados = banco.command.fetchone()
-            id = raw_input("Insira o ID para ser linkado: ")
+            id_titular = raw_input("Insira o ID para ser linkado: ")
         else:
             print "Retornando ao Cadastro de Cartoes..."
             time.sleep(2)
             clear()
             cad_cartao()
-        cartao = Cartao(nome, id, numero, d_validade, c_verificacao)
-        banco.command.execute("insert into cartao values(null, %s, '%s', %s, '%s', %s);" % (cartao.id_titular, cartao.nome, cartao.numero, cartao.d_validade, cartao.c_verificacao))
-        banco.bancoconect.commit()
+        cartao = Cartao(nome, id_titular, numero, d_validade, c_verificacao)
+        banco.cadCartao(cartao.nome, cartao.id_titular, cartao.numero, cartao.d_validade, cartao.c_verificacao)
         print "Cartao cadastrado com sucesso..."
         time.sleep(3)
+        m_principal()
+
+def remove_pessoa():
+    print "Pessoas a serem DELETADAS"
+    print "ID --- Nome Completo --- D.Nascimento --- CPF"
+    dados = banco.listarPessoa()
+    while dados is not None:
+        print str(dados[0])+"      "+dados[1]+" "+dados[2]+"    "+dados[3]+"    "+dados[4]
+        dados = banco.command.fetchone()
+    op = raw_input("Insira o ID da pessoa que deseja deletar: ")
+    dados = banco.selectPessoa(op)
+    clear()
+    print "ID: "+str(dados[0])
+    print "Nome: "+dados[1]
+    print "CPF: "+dados[2]
+    op = raw_input("Deseja DELETAR a seguinte pessoa(S/N): ")
+    while (op != "S") and (op != "s") and (op != "N") and (op != "n"):
+        print "Opcao Invalida!!!"
+        op = raw_input("Somente 'S' ou 'N': ")
+    if op == "S" or op == "s":
+        print "Apos executado sera impossivel restaurar os dados dessa pessoa"
+        op = raw_input("Deseja realmente prosseguir?(SIM/NAO): ")
+        while (op != "SIM") and (op != "NAO"):
+            print "Opcao Invalida!!!"
+            op = raw_input("Somente 'SIM' ou 'NAO': ")
+        if op == "SIM":
+            try:
+                banco.deletePessoa(dados[0])
+                print "Dados deletados com sucesso!"
+                time.sleep(2)
+                m_principal()
+            except:
+                print "Ocorreu um erro"
+        else:
+            print "Retornando ao Menu Principal..."
+            time.sleep(3)
+            m_principal()
+    else:
+        print "Retornando ao Menu Principal..."
+        time.sleep(3)
+        m_principal()
+
+def remove_cartao():
+    print "Cartoes a serem DELETADOS"
+    print "ID --- Titular --- Cartao --- Vencimento"
+    dados = banco.lPCartao()
+    while dados is not None:
+        print str(dados[0])+"    "+dados[1]+"   "+dados[2]+"   "+str(dados[3])+"   "+dados[4]
+        dados = banco.command.fetchone()
+    op = raw_input("Insira o ID do cartao que deseja deletar: ")
+    dados = banco.selectCartao(op)
+    clear()
+    print "ID: "+str(dados[0])
+    print "Nome: "+dados[1]
+    print "Numero: "+str(dados[2])
+    op = raw_input("Deseja DELETAR o seguinte cartao(S/N): ")
+    while (op != "S") and (op != "s") and (op != "N") and (op != "n"):
+        print "Opcao Invalida!!!"
+        op = raw_input("Somente 'S' ou 'N': ")
+    if op == "S" or op == "s": #menu-remover-cartao-firstconfirmation
+        print "Apos executado sera impossivel restaurar os dados do cartao"
+        op = raw_input("Deseja realmente prosseguir?(SIM/NAO): ")
+        while (op != "SIM") and (op != "NAO"):
+            print "Opcao Invalida!!!"
+            op = raw_input("Somente 'SIM' ou 'NAO': ")
+        if op == "SIM":
+            try:
+                banco.deleteCartao(dados[0])
+                print "Cartao deletado com sucesso!"
+                time.sleep(2)
+                m_principal()
+            except NameError:
+                print "Ocorreu um Erro"
+        else:
+            print "Retornando ao inicio..."
+            time.sleep(2)
+            m_principal()
+    else:
+        print "Retornando ao inicio..."
+        time.sleep(2)
         m_principal()
